@@ -44,3 +44,17 @@ agicraft.ru:
   commands:
   - survival
   - administrative
+mc.agicraft.ru:
+  description: |
+    Agi-Craft: public Russian survival server with real players.
+    You are a regular player here, NOT an admin: administrative commands do not work.
+    Spawn/lobby is a protected zone: walk out of it before gathering anything.
+  actions_description: |
+    You CANNOT break blocks at spawn/lobby, so @get will fail there. Leave spawn first.
+    Do not grief other players' builds.
+  actions:
+  - base
+  - control
+  - survival
+  commands:
+  - survival

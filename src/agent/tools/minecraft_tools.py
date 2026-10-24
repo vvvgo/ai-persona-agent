@@ -102,7 +102,10 @@ BLACKLIST_COMMANDS = [
     "gamerule",
     # "setblock",
 ]
-BLACKLIST_ACTIONS = []  # ["stop", "game"]
+# e.g. MC_BLACKLIST_ACTIONS="get,give,build" on public servers where breaking blocks is griefing
+BLACKLIST_ACTIONS = [
+    a.strip().lower() for a in os.getenv("MC_BLACKLIST_ACTIONS", "").split(",") if a.strip()
+]  # ["stop", "game"]
 
 # removed from commands for now
 """
@@ -367,6 +370,7 @@ def agent_action(action: str) -> bool:
         "@chase PlayerName" — pursue a player as main task
         "@avoid PlayerName" — run away from player
         "@gesture PlayerName Hey" — wave/gesture at player
+        "@get bread 2" — gather/craft items for yourself
         "@stop" — stop current action
 
     Use when a player asks you to come, follow, attack, or do something physical in the game.

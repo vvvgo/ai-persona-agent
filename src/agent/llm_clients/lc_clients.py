@@ -1,3 +1,4 @@
+import json
 from typing import TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -16,6 +17,7 @@ class ChatLiteLLMCreds(TypedDict, total=False):
     api_base: str
     api_key: str
     max_tokens: int
+    model_kwargs: dict
 
 
 def get_llm_chain(model_name: str = None) -> BaseChatModel:
@@ -49,6 +51,12 @@ def get_llm_chain(model_name: str = None) -> BaseChatModel:
     if core_llm_api_base and core_llm_api_base != "NONE":
         creds["api_base"] = core_llm_api_base
     # else chosen automatically from env / litellm defaults
+
+    # provider-specific request fields, e.g. GLM thinking effort:
+    # CORE_LLM_EXTRA_BODY='{"thinking": {"type": "enabled", "effort": "low"}}'
+    extra_body = get_secret("CORE_LLM_EXTRA_BODY")
+    if extra_body and extra_body != "NONE":
+        creds["model_kwargs"] = {"extra_body": json.loads(extra_body)}
 
     # print("[lc_clients.py DEBUG] LLM Model full creds =", creds)
 

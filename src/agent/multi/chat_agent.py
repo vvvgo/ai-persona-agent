@@ -12,6 +12,7 @@ Features:
 - Interrupt on new chat events
 """
 
+import os
 import time
 import traceback
 from typing import Any, Dict, List, Optional
@@ -52,7 +53,8 @@ from utils.debug import print_messages
 
 SELF_NAME = get_name()
 MAX_TOOL_ROUNDS = 3
-MAX_RESPONSE_TOKENS = 500  # Hard limit on LLM generation per round
+# Hard limit on LLM generation per round. Reasoning models (e.g. GLM) spend part of it on thinking
+MAX_RESPONSE_TOKENS = int(os.getenv("CHAT_AGENT_MAX_RESPONSE_TOKENS", "500"))
 ENABLE_DEBUG_PRINT_TOOL_LIST = True
 # Minimum characters for a valid response — shorter = interrupted garbage, discard it
 MIN_RESPONSE_LENGTH = 12
@@ -60,6 +62,10 @@ MIN_RESPONSE_LENGTH = 12
 INTERRUPT_COOLDOWN = 10.0
 # Max interrupts per respond() call
 MAX_INTERRUPTS_PER_CALL = 2
+# On busy servers with a slow reasoning model, interrupts restart every answer and it never finishes
+DISABLE_INTERRUPTS = os.getenv("CHAT_AGENT_DISABLE_INTERRUPTS", "false").lower() == "true"
+# If the model answered only with the chat tool, use that message as the voice line too
+VOICE_CHAT_FALLBACK = os.getenv("CHAT_AGENT_VOICE_CHAT_FALLBACK", "false").lower() == "true"
 
 
 def _timer(label: str):
@@ -285,6 +291,8 @@ class ChatAgent(BaseAgent):
 
     def _can_interrupt(self) -> bool:
         """Check if we're allowed to interrupt right now."""
+        if DISABLE_INTERRUPTS:
+            return False
         if self._interrupts_this_call >= MAX_INTERRUPTS_PER_CALL:
             return False
         if time.time() - self._last_interrupt_time < INTERRUPT_COOLDOWN:
@@ -564,10 +572,13 @@ class ChatAgent(BaseAgent):
                     break
 
                 print(f"\n[CHAT AGENT] Executing {len(tool_calls)} tool call(s)...")
+                last_chat_message = ""
                 for tc in tool_calls:
                     tool_name = tc["name"]
                     tool_args = tc.get("args", {})
                     tool_id = tc.get("id", tool_name)
+                    if tool_name == "chat" and tool_args.get("message"):
+                        last_chat_message = str(tool_args["message"])
 
                     tools_config._current_tool_call_id = tool_id
                     with _timer(f"tool {tool_name}"):
@@ -582,7 +593,14 @@ class ChatAgent(BaseAgent):
                 if final_text.strip():
                     break
 
-                if event_waiter.check():
+                # Some models (GLM) only call tools and never write voice text:
+                # speak the chat message instead of spending more rounds on it
+                if VOICE_CHAT_FALLBACK and last_chat_message:
+                    final_text = last_chat_message
+                    print("[CHAT AGENT] No voice text, speaking the chat message")
+                    break
+
+                if not DISABLE_INTERRUPTS and event_waiter.check():
                     print("[CHAT AGENT] Interrupted by new event")
                     break
 

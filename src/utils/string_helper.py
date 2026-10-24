@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import re
 from dataclasses import dataclass, field
@@ -217,9 +218,14 @@ def prepare_mc_chat_send(message: str, max_length=80) -> list[str]:
     if len(message) > 0:
         if message[0] in ["@", "/", "#"]:  # minecraft commands processing
             return [message]
+        # emotion tags like *happy* are for TTS only, in chat they turn into "хаппи"
+        message = re.sub(r"\*[^*\s]{1,20}\*", " ", message)
+        # some servers have local chat by default and need a prefix (e.g. "!") for global chat
+        chat_prefix = os.getenv("MC_CHAT_PREFIX", "")
         return [  # temporal fix TODO make workaround for bedwars detecting
-            str(mc_chat_fix(msg))  # str("!" + mc_chat_fix(msg))
+            chat_prefix + str(mc_chat_fix(msg))
             for msg in smart_sentence_split(message, max_length=max_length)
+            if mc_chat_fix(msg).strip()
         ]
     else:
         return []

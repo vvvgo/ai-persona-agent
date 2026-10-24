@@ -20,7 +20,8 @@ control: |
 survival: |
   `@pearl <player>` - throw an enderpearl to fastly get to the target
   `@shoot <player>` - shoot player using bow
-  `@give <player> minecraft_item count` - same as /give command, but makes your agent obtain item first
+  `@get <minecraft_item> <count>` - obtain items FOR YOURSELF: gather, mine, craft (ex. @get bread 2, @get wheat 10)
+  `@give <player> minecraft_item count` - same as /give command, but makes your agent obtain item first. Only for OTHER players, NEVER your own name (use @get for yourself)
   `@build <structure> [text]` - build a structure (but first will obtain resources).
       ONLY available strucutres with text field needed: grave/sign
       ONLY available other structures: golem/bed/portal

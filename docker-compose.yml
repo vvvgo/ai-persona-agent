@@ -11,7 +11,8 @@ services:
     environment:
       POSTGRES_DB: nettyan
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: REDACTED_DB_PASSWORD
+      # set POSTGRES_PASSWORD in .env (not committed), same value as in .env.postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-REDACTED_DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
